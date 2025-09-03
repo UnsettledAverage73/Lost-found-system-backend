@@ -1,48 +1,43 @@
-# Backend
+# 🚀 Lost & Found System - Backend
 
-This directory contains the FastAPI backend application for the Lost & Found System.
+Welcome to the heart of the Lost & Found System! This FastAPI application powers all the core functionalities, from user authentication to report management and real-time updates.
 
-## Table of Contents
-- [Features](#features)
-- [Setup](#setup)
-  - [Prerequisites](#prerequisites)
-  - [Environment Variables](#environment-variables)
-  - [Installation](#installation)
-- [Running the Application](#running-the-application)
-- [API Endpoints](#api-endpoints)
-- [Database (Supabase)](#database-supabase)
+## 🌟 Features
 
-## Features
-- User Authentication (Registration, Login, User Profile)
-- Report Management (Lost and Found items/people)
-- Image Storage (via Supabase Storage)
-- Real-time Updates (via WebSockets)
-- Matching System (placeholder for AI/ML features)
-- QR Code generation (placeholder)
+-   **🔐 User Authentication:** Secure registration, login, and user profile management.
+-   **📝 Report Management:** Create, retrieve, and manage both lost and found reports for items and people.
+-   **☁️ Image Storage:** Seamlessly store and retrieve report-related images using Supabase Storage.
+-   **⚡ Real-time Updates:** Stay informed with live updates via WebSockets for critical events.
+-   **🔍 Matching System (WIP):** An intelligent system to match lost items/people with found ones (AI/ML integration planned).
+-   **📷 QR Code Generation (WIP):** Placeholder for future QR code functionalities.
 
-## Setup
+## 🛠️ Setup
 
 ### Prerequisites
-- Python 3.9+
-- `pip` (Python package installer)
-- `venv` (Python virtual environment)
-- Supabase Account (with a project created)
+
+Before you begin, ensure you have the following installed:
+
+-   **Python 3.9+**
+-   **`pip`** (Python package installer)
+-   **`venv`** (Python virtual environment)
+-   **Supabase Account:** A free account with a new project created and its URL and Anon Key handy.
 
 ### Environment Variables
 
-Create a `.env` file in the `backend/` directory with the following variables:
+Create a `.env` file in the `backend/` directory with the following variables. **Replace the placeholder values with your actual Supabase credentials.**
 
-```
+```dotenv
 SUPABASE_URL="YOUR_SUPABASE_PROJECT_URL"
 SUPABASE_KEY="YOUR_SUPABASE_ANON_KEY"
 SUPABASE_REPORT_PHOTOS_BUCKET="report_photos" # This bucket must be created in Supabase Storage
 ```
 
-**Important:** Ensure you have created the `report_photos` bucket in your Supabase Storage. Go to your Supabase project dashboard -> Storage -> New bucket.
+**⚠️ Important:** You *must* create the `report_photos` bucket in your Supabase Storage.
+Navigate to your Supabase project dashboard -> **Storage** -> Click **"New bucket"** and name it `report_photos`. Ensure its public access settings are configured as per your requirements.
 
 ### Supabase Database Setup
 
-You need a `profiles` table in your Supabase database for user management. Run the following SQL in your Supabase SQL Editor:
+For user profile management, you'll need a `profiles` table in your Supabase database. Copy and paste the following SQL commands into your Supabase SQL Editor and run them:
 
 ```sql
 CREATE TABLE public.profiles (
@@ -70,58 +65,67 @@ create policy "Users can update their own profile."
 
 ### Installation
 
+Follow these steps to set up your backend:
+
 1.  **Navigate to the `backend` directory:**
     ```bash
     cd backend
     ```
 
-2.  **Create and activate a virtual environment:**
+2.  **Create and activate a Python virtual environment:**
     ```bash
     python3 -m venv venv
     source venv/bin/activate
     ```
 
-3.  **Install Python dependencies:**
+3.  **Install the required Python dependencies:**
     ```bash
     pip install -r requirements.txt
     ```
 
-## Running the Application
+## 🚀 Running the Application
 
-To run the FastAPI server, navigate to the **root of the project** (`Lost-Found-System/`) and execute:
+To start the FastAPI server, navigate to the **root of your project** (`Lost-Found-System/`) and execute the following commands:
 
 ```bash
-cd .. # If you are currently in the backend directory
+# If you are currently in the backend directory, go up one level
+cd ..
+
+# Activate the virtual environment
 source backend/venv/bin/activate
+
+# Run the FastAPI application with auto-reloading
 uvicorn backend.api.main:app --reload
 ```
 
-The API will be available at `http://localhost:8000`.
+The backend API will now be accessible at `http://localhost:8000`.
 
-## API Endpoints
+## 🗺️ API Endpoints
 
--   **Authentication:**
-    -   `POST /auth/register`: Register a new user.
-    -   `POST /auth/token`: Login and get an access token.
-    -   `GET /auth/me`: Get current user details (requires authentication).
+Here's a quick overview of the key API endpoints:
 
--   **Reports:**
-    -   `POST /reports/lost`: Create a new lost report (requires authentication).
-    -   `POST /reports/found`: Create a new found report (requires authentication).
-    -   `GET /reports`: List all reports, with optional type and status filters.
-    -   `GET /reports/{report_id}`: Get details of a specific report.
+### Authentication
+-   `POST /auth/register`: Register a new user with contact, password, role, and consent.
+-   `POST /auth/token`: Log in a user and obtain an access token.
+-   `GET /auth/me`: Retrieve details of the currently authenticated user.
 
--   **Matches:**
-    -   `GET /matches/report/{report_id}`: Get matches for a specific report.
-    -   `POST /matches/{match_id}/status`: Update the status of a match.
+### Reports
+-   `POST /reports/lost`: Submit a new lost report with details and optional photos.
+-   `POST /reports/found`: Submit a new found report with details, optional audio transcription, and photos.
+-   `GET /reports`: Fetch a list of all reports, with options to filter by type (lost/found) and status.
+-   `GET /reports/{report_id}`: Retrieve detailed information for a specific report.
 
--   **Users:**
-    -   `GET /users/me`: Get current user profile.
-    -   `PUT /users/me`: Update current user profile.
+### Matches
+-   `GET /matches/report/{report_id}`: Find potential matches for a given report.
+-   `POST /matches/{match_id}/status`: Update the status of a specific match (e.g., "PENDING", "CONFIRMED", "REJECTED").
 
--   **WebSockets:**
-    -   `ws /ws/{user_id}`: WebSocket endpoint for real-time updates.
+### Users
+-   `GET /users/me`: Get the profile information of the authenticated user.
+-   `PUT /users/me`: Update the profile information of the authenticated user.
 
-## Database (Supabase)
+### WebSockets
+-   `ws /ws/{user_id}`: Establish a WebSocket connection for real-time updates and notifications.
 
-This backend uses Supabase for database management (PostgreSQL) and file storage (Supabase Storage). Ensure your Supabase project is set up correctly with the necessary tables and buckets.
+## 🐘 Database (Supabase)
+
+This project leverages [Supabase](https://supabase.com/) as its backend-as-a-service, utilizing PostgreSQL for database management and Supabase Storage for handling file uploads. Ensure your Supabase project is correctly configured as per the `Environment Variables` and `Supabase Database Setup` sections.
