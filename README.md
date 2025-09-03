@@ -129,3 +129,31 @@ Here's a quick overview of the key API endpoints:
 ## 🐘 Database (Supabase)
 
 This project leverages [Supabase](https://supabase.com/) as its backend-as-a-service, utilizing PostgreSQL for database management and Supabase Storage for handling file uploads. Ensure your Supabase project is correctly configured as per the `Environment Variables` and `Supabase Database Setup` sections.
+
+## 🤝 Running Both Frontend and Backend (Monorepo Setup)
+
+If you prefer to manage both the frontend and backend from the root directory of the `Lost-Found-System` project, here's how you can do it:
+
+1.  **Open two separate terminal windows.**
+
+2.  **In the first terminal (for Backend):**
+    -   Navigate to the project root:
+        ```bash
+        cd /path/to/Lost-Found-System
+        ```
+    -   Activate the backend virtual environment and start the FastAPI server:
+        ```bash
+        source backend/venv/bin/activate && uvicorn backend.api.main:app --reload
+        ```
+
+3.  **In the second terminal (for Frontend):**
+    -   Navigate to the frontend directory:
+        ```bash
+        cd /path/to/Lost-Found-System/frontend
+        ```
+    -   Start the Next.js development server:
+        ```bash
+        npm run dev
+        ```
+
+This setup allows you to see backend logs and frontend output simultaneously, which is great for development and debugging.
