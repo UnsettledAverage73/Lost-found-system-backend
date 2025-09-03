@@ -2,6 +2,29 @@
 
 Welcome to the heart of the Lost & Found System! This FastAPI application powers all the core functionalities, from user authentication to report management and real-time updates.
 
+## 🏁 Getting Started
+
+To get started with the Lost & Found System, follow these steps:
+
+1.  **Create a New Project Directory:**
+    ```bash
+    mkdir Lost-Found-System
+    cd Lost-Found-System
+    ```
+
+2.  **Clone the Backend Repository:**
+    ```bash
+    git clone https://github.com/UnsettledAverage73/Lost-found-system-backend backend
+    ```
+
+3.  **Clone the Frontend Repository:**
+    ```bash
+    git clone https://github.com/UnsettledAverage73/Lost-Found-System-frontend frontend
+    ```
+
+4.  **Continue with the Backend Setup:**
+    Now, proceed with the [Backend Setup](#🛠️-setup) instructions below.
+
 ## 🌟 Features
 
 -   **🔐 User Authentication:** Secure registration, login, and user profile management.
