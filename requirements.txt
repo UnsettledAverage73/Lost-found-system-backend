@@ -5,7 +5,7 @@
 Pillow # For image processing
 numpy # For numerical operations, especially with embeddings
 scikit-learn # For cosine similarity or other utilities
-# faiss-cpu # Or faiss-gpu if a GPU is available, for efficient similarity search
+faiss-cpu # Or faiss-gpu if a GPU is available, for efficient similarity search
 # sentence-transformers # For text embeddings
 # torch # For CLIP and sentence-transformers
 # transformers # For CLIP and sentence-transformers
