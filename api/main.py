@@ -1,3 +1,5 @@
+# backend/api/main.py
+
 import uuid
 import base64
 import numpy as np
@@ -18,8 +20,8 @@ from backend.core.config import (
     MATCH_ACCURACY_TARGET, AVERAGE_MATCH_TIME_TARGET_MINUTES,
     REUNIFICATION_RATE_TARGET, FALSE_POSITIVE_RATE_TARGET, OFFLINE_SYNC_RELIABILITY_TARGET
 )
-# from backend.core.database import get_database, startup_db_client, shutdown_db_client, store_image_in_gridfs, get_image_from_gridfs # Removed MongoDB imports
-from backend.core.supabase import initialize_supabase_client # Import Supabase initializer
+from backend.core.database import get_database, startup_db_client, shutdown_db_client # Re-added MongoDB imports
+# from backend.core.supabase import initialize_supabase_client # Removed Supabase initializer
 
 # Import ML functions
 from backend.ml.embeddings import get_face_embeddings, get_image_embedding, get_text_embedding, calculate_fused_score
@@ -50,18 +52,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.on_event("startup") # Re-enabled startup event
+@app.on_event("startup")
 async def startup():
-    initialize_supabase_client()
+    await startup_db_client() # Call MongoDB startup
     print("Initializing FAISS indexes...")
     faiss_indexes["face"] = initialize_faiss_index(512) # DeepFace ArcFace: 512
     faiss_indexes["image"] = initialize_faiss_index(512) # CLIP: 512
     faiss_indexes["text"] = initialize_faiss_index(384) # SBERT: 384
     print("FAISS indexes initialized.")
 
-# @app.on_event("shutdown") # No specific shutdown for Supabase client needed here
-# async def shutdown():
-#     await shutdown_db_client()
+@app.on_event("shutdown")
+async def shutdown():
+    await shutdown_db_client() # Call MongoDB shutdown
 
 # WebSocket endpoint
 @app.websocket("/ws/{user_id}")

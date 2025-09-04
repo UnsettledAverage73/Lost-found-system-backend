@@ -11,28 +11,30 @@ import soundfile as sf # To read audio data into numpy array
 # This will download the model the first time it's run.
 try:
     import whisper
-    WHISPER_MODEL = whisper.load_model("base")
-    print("Whisper model 'base' loaded successfully.")
+    # Try to load a tiny model, or set to None if it fails
+    # This assumes 'tiny.en' is a valid model, otherwise it'll still fail.
+    # For now, let's make it explicitly None if we want to disable.
+    # WHISPER_MODEL = whisper.load_model("tiny.en")
+    WHISPER_MODEL = None # Explicitly set to None to disable if not wanted
+    if WHISPER_MODEL is None:
+        print("Whisper model is disabled or failed to load. Speech-to-text functionality will be skipped.")
 except ImportError:
-    print("OpenAI Whisper not installed. Speech-to-text functionality will be unavailable.")
+    print("Whisper library not installed. Speech-to-text functionality will be skipped.")
     WHISPER_MODEL = None
 except Exception as e:
-    print(f"Error loading Whisper model: {e}")
+    print(f"Error loading Whisper model: {e}. Speech-to-text functionality will be skipped.")
     WHISPER_MODEL = None
 
-def transcribe_audio(audio_data: bytes) -> Optional[str]:
-    """
-    Transcribes audio data (bytes) into text using the Whisper model.
-    """
+def transcribe_audio(audio_file: bytes) -> str:
     if WHISPER_MODEL is None:
-        print("Whisper model not available for transcription (disabled).")
-        return None
+        print("Whisper model is not available. Skipping audio transcription.")
+        return ""
 
     try:
         # Whisper expects audio in a specific format (e.g., 16kHz mono FLAC/WAV).
         # We need to ensure the audio_data is in a format Whisper can process.
         # For simplicity, we'll try to load it with soundfile and convert if necessary.
-        audio_stream = BytesIO(audio_data)
+        audio_stream = BytesIO(audio_file)
         
         # Read audio data into a numpy array (soundfile handles various formats)
         # Ensure it's 16kHz and mono
@@ -58,5 +60,5 @@ def transcribe_audio(audio_data: bytes) -> Optional[str]:
         return result["text"]
     except Exception as e:
         print(f"Error during audio transcription: {e}")
-        return None
+        return ""
 
