@@ -25,7 +25,7 @@ from core.database import get_database, startup_db_client, shutdown_db_client # 
 # Import ML functions
 from ml.embeddings import get_face_embeddings, get_image_embedding, get_text_embedding, calculate_fused_score
 from ml.matcher import run_matching_job, initialize_faiss_index, faiss_indexes
-from ml.speech_to_text import transcribe_audio
+# from ml.speech_to_text import transcribe_audio # Temporarily disabled speech-to-text functionality
 from core.websocket_manager import manager # Import the WebSocket manager
 
 # Load environment variables

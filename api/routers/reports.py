@@ -7,7 +7,7 @@ from datetime import datetime # Added datetime import
 from models.schemas import ReportSchema, PersonSchema, ItemSchema, PyObjectId # Re-added PyObjectId
 from core.database import get_database, store_image_in_gridfs, get_image_from_gridfs # Re-added MongoDB database and GridFS imports
 from ml.matcher import run_matching_job
-from ml.speech_to_text import transcribe_audio
+# from ml.speech_to_text import transcribe_audio # Temporarily disabled speech-to-text functionality
 from pymongo import MongoClient # Re-added MongoDB client import
 from bson import ObjectId # Re-added MongoDB ObjectId import
 from gridfs import GridFSBucket # Added GridFSBucket import

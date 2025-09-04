@@ -20,7 +20,6 @@ passlib[bcrypt] # For password hashing
 python-jose[cryptography] # For JWT (JSON Web Tokens)
 
 # Speech-to-Text
-#openai-whisper # For local Whisper model
 motor # Re-add motor for async MongoDB driver
 
 uvicorn
