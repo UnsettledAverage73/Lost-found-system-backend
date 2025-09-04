@@ -11,7 +11,7 @@ scikit-learn # For cosine similarity or other utilities
 # transformers # For CLIP and sentence-transformers
 # opencv-python # Potentially usfed by deepface/face_recognition
 python-multipart # If handling file uploads in FastAPI
-# pymongo # For interacting with MongoDB directly from ML scripts if needed, though FastAPI will be the primary interface
+pymongo # For interacting with MongoDB directly from ML scripts if needed, though FastAPI will be the primary interface
 
 # Development/Utility
 uvicorn # ASGI server for FastAPI
@@ -21,6 +21,7 @@ python-jose[cryptography] # For JWT (JSON Web Tokens)
 
 # Speech-to-Text
 #openai-whisper # For local Whisper model
+motor # Re-add motor for async MongoDB driver
 
 uvicorn
 # opencv-python
@@ -33,4 +34,4 @@ aiofiles
 # pydantic-settings # Remove since it's dependent on pydantic
 fastapi
 websockets # Add websockets for real-time updates
-supabase # Add Supabase client for Python
+# supabase # Remove Supabase client for Python
