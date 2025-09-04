@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File
 
-from ml.speech_to_text import transcribe_audio
+# from ml.speech_to_text import transcribe_audio
 
 router = APIRouter()
 
