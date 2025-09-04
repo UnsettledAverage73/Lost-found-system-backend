@@ -64,7 +64,7 @@ async def create_lost_report(
     created_report = await database["reports"].find_one({"_id": new_report.inserted_id})
     
     # Start matching process in the background
-    # asyncio.create_task(run_matching_job(str(new_report.inserted_id), database)) # Pass database client
+    asyncio.create_task(run_matching_job(str(new_report.inserted_id), created_report, database))
     
     return ReportSchema.model_validate(created_report)
 
@@ -109,7 +109,7 @@ async def create_found_report(
     created_report = await database["reports"].find_one({"_id": new_report.inserted_id})
 
     # Start matching process in the background
-    # asyncio.create_task(run_matching_job(str(new_report.inserted_id), database)) # Pass database client
+    asyncio.create_task(run_matching_job(str(new_report.inserted_id), created_report, database))
     
     return ReportSchema.model_validate(created_report)
 

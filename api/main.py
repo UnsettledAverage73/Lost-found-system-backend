@@ -21,7 +21,6 @@ from core.config import (
     REUNIFICATION_RATE_TARGET, FALSE_POSITIVE_RATE_TARGET, OFFLINE_SYNC_RELIABILITY_TARGET
 )
 from core.database import get_database, startup_db_client, shutdown_db_client # Re-added MongoDB imports
-# from backend.core.supabase import initialize_supabase_client # Removed Supabase initializer
 
 # Import ML functions
 from ml.embeddings import get_face_embeddings, get_image_embedding, get_text_embedding, calculate_fused_score
@@ -30,7 +29,7 @@ from ml.speech_to_text import transcribe_audio
 from core.websocket_manager import manager # Import the WebSocket manager
 
 # Load environment variables
-load_dotenv(dotenv_path="backend/.env") # NOTE: This path might also need adjustment if .env is at the repo root on Render
+load_dotenv()
 
 # Existing FastAPI app instance
 app = FastAPI(

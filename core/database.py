@@ -10,10 +10,10 @@ from bson import ObjectId
 import io # Added import for io
 
 # Load environment variables
-load_dotenv(dotenv_path="backend/.env")
+load_dotenv()
 
 MONGO_DB_URL = os.getenv("MONGO_DB_URL")
-MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "lostfounddb")
+MONGO_DB_NAME = os.getenv("MONGO_DB_NAME")
 
 client: Optional[AsyncIOMotorClient] = None
 database: Optional[Any] = None # Motor collection type

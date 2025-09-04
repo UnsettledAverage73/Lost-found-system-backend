@@ -9,11 +9,10 @@ import uuid
 from datetime import datetime
 
 from models.schemas import ReportSchema, MatchSchema, ItemSchema
-# from core.database import get_database # Removed MongoDB database import
+from core.database import get_database # Added MongoDB database import
 from ml.embeddings import get_face_embeddings, get_image_embedding, get_text_embedding, calculate_fused_score
 # from ml.speech_to_text import transcribe_audio # Removed due to temporary disable
 from core.websocket_manager import manager
-from core.supabase import Client # Import Client for type hinting
 
 # Directory for FAISS indexes
 FAISS_INDEX_DIR = "ml/indexes"
@@ -102,7 +101,7 @@ def search_faiss_index(modality: str, query_embedding: np.ndarray, k: int = 5) -
 
     return distances, report_ids
 
-async def run_matching_job(report_id: str, report_data: dict, supabase: Client): # Changed mock_db to supabase client
+async def run_matching_job(report_id: str, report_data: dict, database): # Changed from supabase client to MongoDB database
     """
     Main matching job function.
     1. Extracts embeddings for a new LOST or FOUND report.
@@ -176,9 +175,8 @@ async def run_matching_job(report_id: str, report_data: dict, supabase: Client):
                 
                 # Check if the other_report_id is of the opposite type
                 # Fetch other report details from Supabase
-                other_report_response = await supabase.from_("reports").select("type").eq("id", other_report_id).single().execute()
-                other_report_details = other_report_response.data
-                if other_report_details and other_report_details["type"] != report_type:
+                other_report_response = database.reports.find_one({"id": other_report_id})
+                if other_report_response and other_report_response["type"] != report_type:
                     current_face_score = scores[i]
                     if other_report_id not in candidate_matches:
                         candidate_matches[other_report_id] = {"face_score": current_face_score}
@@ -193,9 +191,8 @@ async def run_matching_job(report_id: str, report_data: dict, supabase: Client):
             if other_report_id == report_id:
                 continue
 
-            other_report_response = await supabase.from_("reports").select("type").eq("id", other_report_id).single().execute()
-            other_report_details = other_report_response.data
-            if other_report_details and other_report_details["type"] != report_type:
+            other_report_response = database.reports.find_one({"id": other_report_id})
+            if other_report_response and other_report_response["type"] != report_type:
                 current_img_score = scores[i]
                 if other_report_id not in candidate_matches:
                     candidate_matches[other_report_id] = {"image_score": current_img_score}
@@ -210,9 +207,8 @@ async def run_matching_job(report_id: str, report_data: dict, supabase: Client):
             if other_report_id == report_id:
                 continue
 
-            other_report_response = await supabase.from_("reports").select("type").eq("id", other_report_id).single().execute()
-            other_report_details = other_report_response.data
-            if other_report_details and other_report_details["type"] != report_type:
+            other_report_response = database.reports.find_one({"id": other_report_id})
+            if other_report_response and other_report_response["type"] != report_type:
                 current_text_score = scores[i]
                 if other_report_id not in candidate_matches:
                     candidate_matches[other_report_id] = {"text_score": current_text_score}
@@ -247,8 +243,8 @@ async def run_matching_job(report_id: str, report_data: dict, supabase: Client):
                 "created_at": datetime.utcnow().isoformat()
             }
             # Insert into Supabase
-            insert_response = supabase.from_("matches").insert([new_match_entry]).execute()
-            if insert_response.data:
+            insert_response = database.matches.insert_one(new_match_entry)
+            if insert_response.inserted_id:
                 print(f"Persisted match {match_id}: {new_match_entry}")
                 # Send real-time notification about the new match
                 await manager.broadcast(f"New match found for report {report_id}: {match_id}")

@@ -34,4 +34,3 @@ aiofiles
 # pydantic-settings # Remove since it's dependent on pydantic
 fastapi
 websockets # Add websockets for real-time updates
-# supabase # Remove Supabase client for Python
