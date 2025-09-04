@@ -12,22 +12,22 @@ from dotenv import load_dotenv
 import os
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.models.schemas import (
+from ..models.schemas import (
     PersonSchema, ItemSchema, ReportSchema, 
     EmbeddingSchema, MatchSchema, UserSchema, NotificationLogEntry
 )
-from backend.core.config import (
+from ..core.config import (
     MATCH_ACCURACY_TARGET, AVERAGE_MATCH_TIME_TARGET_MINUTES,
     REUNIFICATION_RATE_TARGET, FALSE_POSITIVE_RATE_TARGET, OFFLINE_SYNC_RELIABILITY_TARGET
 )
-from backend.core.database import get_database, startup_db_client, shutdown_db_client # Re-added MongoDB imports
+from ..core.database import get_database, startup_db_client, shutdown_db_client # Re-added MongoDB imports
 # from backend.core.supabase import initialize_supabase_client # Removed Supabase initializer
 
 # Import ML functions
-from backend.ml.embeddings import get_face_embeddings, get_image_embedding, get_text_embedding, calculate_fused_score
-from backend.ml.matcher import run_matching_job, initialize_faiss_index, faiss_indexes
-from backend.ml.speech_to_text import transcribe_audio
-from backend.core.websocket_manager import manager # Import the WebSocket manager
+from ..ml.embeddings import get_face_embeddings, get_image_embedding, get_text_embedding, calculate_fused_score
+from ..ml.matcher import run_matching_job, initialize_faiss_index, faiss_indexes
+from ..ml.speech_to_text import transcribe_audio
+from ..core.websocket_manager import manager # Import the WebSocket manager
 
 # Load environment variables
 load_dotenv(dotenv_path="backend/.env")
@@ -79,7 +79,7 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
 
 # --- API Endpoints ---
 
-from backend.api.routers import reports, matches, qr, users, audio, notifications, auth
+from .routers import reports, matches, qr, users, audio, notifications, auth
 app.include_router(reports.router)
 app.include_router(matches.router)
 app.include_router(qr.router)
