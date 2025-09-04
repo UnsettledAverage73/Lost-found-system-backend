@@ -12,7 +12,7 @@ import io # Added import for io
 # Load environment variables
 load_dotenv(dotenv_path="backend/.env")
 
-MONGO_DB_URL = os.getenv("MONGO_DB_URL", "mongodb://localhost:27017")
+MONGO_DB_URL = os.getenv("MONGO_DB_URL")
 MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "lostfounddb")
 
 client: Optional[AsyncIOMotorClient] = None

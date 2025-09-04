@@ -4,14 +4,14 @@ from datetime import timedelta
 from typing import Optional, Annotated
 from pydantic import BaseModel # Added BaseModel import
 
-from backend.models.schemas import UserSchema, UserRegisterSchema, PyObjectId # Re-added PyObjectId
-from backend.core.database import get_database # Re-added MongoDB database import
-from backend.core.security import verify_password, get_password_hash, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES # Re-added custom JWT creation
+from models.schemas import UserSchema, UserRegisterSchema, PyObjectId # Re-added PyObjectId
+from core.database import get_database # Re-added MongoDB database import
+from core.security import verify_password, get_password_hash, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES # Re-added custom JWT creation
 from bson import ObjectId # Re-added MongoDB ObjectId import
-from backend.core.security import get_current_user # Re-added custom JWT current user
+from core.security import get_current_user # Re-added custom JWT current user
 from pymongo import MongoClient # Re-added MongoDB client import
 
-# from backend.core.supabase import get_supabase_client # Removed Supabase imports
+# from core.supabase import get_supabase_client # Removed Supabase imports
 # from supabase import Client # Removed Client
 
 router = APIRouter()

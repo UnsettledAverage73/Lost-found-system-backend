@@ -8,12 +8,12 @@ from sklearn.metrics.pairwise import cosine_similarity
 import uuid
 from datetime import datetime
 
-from backend.models.schemas import ReportSchema, MatchSchema, ItemSchema
-# from backend.core.database import get_database # Removed MongoDB database import
-from backend.ml.embeddings import get_face_embeddings, get_image_embedding, get_text_embedding, calculate_fused_score
-# from backend.ml.speech_to_text import transcribe_audio # Removed due to temporary disable
-from backend.core.websocket_manager import manager
-from backend.core.supabase import Client # Import Client for type hinting
+from models.schemas import ReportSchema, MatchSchema, ItemSchema
+# from core.database import get_database # Removed MongoDB database import
+from ml.embeddings import get_face_embeddings, get_image_embedding, get_text_embedding, calculate_fused_score
+# from ml.speech_to_text import transcribe_audio # Removed due to temporary disable
+from core.websocket_manager import manager
+from core.supabase import Client # Import Client for type hinting
 
 # Directory for FAISS indexes
 FAISS_INDEX_DIR = "ml/indexes"

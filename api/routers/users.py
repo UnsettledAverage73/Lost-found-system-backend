@@ -4,8 +4,8 @@ from datetime import datetime
 from pymongo import MongoClient # Re-added MongoDB client import
 from bson import ObjectId # Re-added MongoDB ObjectId import
 
-from backend.models.schemas import NotificationLogEntry, PyObjectId # Re-added PyObjectId
-from backend.core.database import get_database # Re-added MongoDB database import
+from models.schemas import NotificationLogEntry, PyObjectId # Re-added PyObjectId
+from core.database import get_database # Re-added MongoDB database import
 # from backend.core.supabase import get_supabase_client # Removed Supabase imports
 # from supabase import Client # Removed Client for type hinting
 

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pymongo import MongoClient # Re-added MongoDB client import
 from bson import ObjectId # Re-added MongoDB ObjectId import
-from backend.core.database import get_database # Re-added MongoDB database import
+from core.database import get_database # Re-added MongoDB database import
 
 router = APIRouter()
 

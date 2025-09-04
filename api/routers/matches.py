@@ -3,15 +3,15 @@ from typing import List, Optional, Literal
 import base64
 import asyncio # Import asyncio for background tasks
 
-from backend.models.schemas import MatchSchema, ReportSchema, PyObjectId # Re-added PyObjectId
-from backend.core.database import get_database, get_image_from_gridfs # Re-added MongoDB imports
-from backend.ml.matcher import run_matching_job
+from models.schemas import MatchSchema, ReportSchema, PyObjectId # Re-added PyObjectId
+from core.database import get_database, get_image_from_gridfs # Re-added MongoDB imports
+from ml.matcher import run_matching_job
 from pymongo import MongoClient # Re-added MongoDB client import
 from bson import ObjectId # Re-added MongoDB ObjectId import
 
-# from backend.core.supabase import get_supabase_client, get_file_from_supabase_storage # Removed Supabase imports
+# from core.supabase import get_supabase_client, get_file_from_supabase_storage # Removed Supabase imports
 # from supabase import Client # Removed Client for type hinting
-# from backend.api.routers.reports import SUPABASE_REPORT_PHOTOS_BUCKET # Removed Supabase bucket name
+# from .reports import SUPABASE_REPORT_PHOTOS_BUCKET # Removed Supabase bucket name
 
 router = APIRouter()
 

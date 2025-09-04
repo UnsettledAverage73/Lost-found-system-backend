@@ -6,10 +6,10 @@ from dotenv import load_dotenv
 from jose import JWTError, jwt # Re-added jose imports for JWT
 from passlib.context import CryptContext
 
-from backend.models.schemas import UserSchema # Import UserSchema for token validation
+from models.schemas import UserSchema # Import UserSchema for token validation
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer # Re-added OAuth2PasswordBearer
-from backend.core.database import get_database
+from core.database import get_database
 from pymongo import MongoClient
 
 # Load environment variables
