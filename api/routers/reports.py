@@ -3,6 +3,8 @@ from typing import List, Optional, Literal
 import base64
 import uuid # Import uuid for generating unique file names
 from datetime import datetime # Added datetime import
+from fastapi.responses import Response # Import Response for serving images
+import asyncio # Import asyncio for create_task
 
 from models.schemas import ReportSchema, PersonSchema, ItemSchema, PyObjectId # Re-added PyObjectId
 from core.database import get_database, store_image_in_gridfs, get_image_from_gridfs # Re-added MongoDB database and GridFS imports
@@ -29,7 +31,9 @@ async def create_lost_report(
     ref_ids_str: str = Form(..., alias="refs", description="Comma-separated IDs of person/item"),
     description_text: str = Form(..., alias="desc_text"),
     language: str = Form(..., alias="lang"),
-    location: str = Form(...),
+    latitude: float = Form(..., description="Latitude of the location"),
+    longitude: float = Form(..., description="Longitude of the location"),
+    location_description: Optional[str] = Form(None, alias="location_desc", description="Human-readable description of the location"),
     photos: Optional[List[UploadFile]] = File(None), # Made photos optional
     database: MongoClient = Depends(get_database) # Reverted to MongoDB client dependency
 ):
@@ -54,7 +58,11 @@ async def create_lost_report(
         "description_text": description_text,
         "language": language,
         "photo_ids": photo_ids, # Use GridFS IDs
-        "location": location,
+        "location": {
+            "latitude": latitude,
+            "longitude": longitude,
+            "description": location_description,
+        },
         "status": "OPEN",
         "created_at": datetime.utcnow()
     }
@@ -66,6 +74,9 @@ async def create_lost_report(
     # Start matching process in the background
     asyncio.create_task(run_matching_job(str(new_report.inserted_id), created_report, database))
     
+    # Generate photo URLs for the created report
+    created_report["photo_urls"] = [f"/reports/images/{str(file_id)}" for file_id in photo_ids]
+    
     return ReportSchema.model_validate(created_report)
 
 
@@ -75,7 +86,9 @@ async def create_found_report(
     ref_ids_str: str = Form(..., alias="refs", description="Comma-separated IDs of person/item"),
     description_text: str = Form(..., alias="desc_text"),
     language: str = Form(..., alias="lang"),
-    location: str = Form(...),
+    latitude: float = Form(..., description="Latitude of the location"),
+    longitude: float = Form(..., description="Longitude of the location"),
+    location_description: Optional[str] = Form(None, alias="location_desc", description="Human-readable description of the location"),
     photos: Optional[List[UploadFile]] = File(None), # Made photos optional
     database: MongoClient = Depends(get_database) # Reverted to MongoDB client dependency
 ):
@@ -99,7 +112,11 @@ async def create_found_report(
         "description_text": description_text,
         "language": language,
         "photo_ids": photo_ids, # Use GridFS IDs
-        "location": location,
+        "location": {
+            "latitude": latitude,
+            "longitude": longitude,
+            "description": location_description,
+        },
         "status": "OPEN",
         "created_at": datetime.utcnow()
     }
@@ -110,6 +127,9 @@ async def create_found_report(
 
     # Start matching process in the background
     asyncio.create_task(run_matching_job(str(new_report.inserted_id), created_report, database))
+    
+    # Generate photo URLs for the created report
+    created_report["photo_urls"] = [f"/reports/images/{str(file_id)}" for file_id in photo_ids]
     
     return ReportSchema.model_validate(created_report)
 
@@ -131,9 +151,7 @@ async def list_reports(
     # For each report, convert photo_ids to base64 images for the client
     # This is a placeholder for now, actual image serving would be a separate endpoint
     for report in reports:
-        report["photo_urls"] = [] # Placeholder for actual image URLs
-        # In a real app, you'd have an endpoint like /images/{file_id}
-        # For now, we'll just not return the actual image data in the list view
+        report["photo_urls"] = [f"/reports/images/{str(file_id)}" for file_id in report.get("photo_ids", [])]
 
     return [ReportSchema.model_validate(report) for report in reports]
 
@@ -146,15 +164,8 @@ async def get_report(report_id: str, database: MongoClient = Depends(get_databas
     if report is None:
         raise HTTPException(status_code=404, detail="Report not found")
     
-    # Convert photo_ids to base64 images for the client (example, consider a dedicated image endpoint)
-    # This is for fetching a single report, where returning image data might be more relevant
-    report_photos_b64 = []
-    for file_id in report.get("photo_ids", []):
-        image_data = await get_image_from_gridfs(file_id)
-        if image_data:
-            report_photos_b64.append(base64.b64encode(image_data).decode("utf-8"))
-    
-    report["photo_urls"] = report_photos_b64 # This will contain base64 encoded images
+    # Generate photo URLs for the report
+    report["photo_urls"] = [f"/reports/images/{str(file_id)}" for file_id in report.get("photo_ids", [])]
     
     return ReportSchema.model_validate(report)
 
@@ -182,3 +193,22 @@ async def delete_report(report_id: str, database: MongoClient = Depends(get_data
         raise HTTPException(status_code=404, detail="Report not found")
     
     return {"message": "Report deleted successfully"}
+
+@router.get("/reports/images/{file_id}")
+async def get_report_image(file_id: str, database: MongoClient = Depends(get_database)):
+    if not ObjectId.is_valid(file_id):
+        raise HTTPException(status_code=400, detail="Invalid file ID format")
+
+    image_data = await get_image_from_gridfs(ObjectId(file_id))
+    if image_data is None:
+        raise HTTPException(status_code=404, detail="Image not found")
+    
+    # Determine content type (you might store this in GridFS metadata when uploading)
+    # For now, let's assume it's a JPEG or PNG for simplicity.
+    # A more robust solution would store content_type in GridFS metadata.
+    # We'll fetch file metadata from GridFS to get the content type.
+    fs_bucket = GridFSBucket(database.client.get_database(database.name))
+    grid_out = await fs_bucket.open_download_stream(ObjectId(file_id))
+    content_type = grid_out.content_type if grid_out.content_type else "application/octet-stream"
+    
+    return Response(content=image_data, media_type=content_type)

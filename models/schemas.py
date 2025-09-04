@@ -54,6 +54,11 @@ class ItemSchema(BaseModel):
         arbitrary_types_allowed = True
         json_encoders = {ObjectId: str}
 
+class LocationDataSchema(BaseModel):
+    latitude: float = Field(..., description="Latitude of the location")
+    longitude: float = Field(..., description="Longitude of the location")
+    description: Optional[str] = Field(None, description="Human-readable description of the location")
+
 class ReportSchema(BaseModel):
     id: Optional[PyObjectId] = Field(alias="_id") # Reverted to MongoDB-specific ID
     type: Literal["LOST", "FOUND"] = Field(..., description="Type of report")
@@ -62,9 +67,10 @@ class ReportSchema(BaseModel):
     description_text: str = Field(..., alias="desc_text", description="Description text of the lost/found item/person")
     language: str = Field(..., description="Language of the description") # Changed: Removed alias="lang"
     photo_ids: List[str] = Field([], description="GridFS IDs of stored photos for the report") # Changed description
-    location: str = Field(..., description="Location where the person/item was lost/found")
+    location: LocationDataSchema = Field(..., description="Location where the person/item was lost/found")
     status: Literal["OPEN", "MATCHED", "REUNITED", "CLOSED"] = Field("OPEN", description="Status of the report")
     created_at: datetime = Field(default_factory=datetime.utcnow, description="Timestamp of report creation")
+    photo_urls: List[str] = Field([], description="List of URLs for report photos")
 
     # Reverted to Pydantic V1 Config for ObjectId serialization
     class Config:
@@ -90,7 +96,7 @@ class MatchSchema(BaseModel):
     id: Optional[PyObjectId] = Field(alias="_id") # Reverted to MongoDB-specific ID
     lost_report_id: str = Field(..., description="ID of the lost report")
     found_report_id: str = Field(..., description="ID of the found report")
-    scores: dict = Field(..., description="Dictionary of individual modality scores (face, image, text)")
+    scores: dict = Field(..., description="Dictionary of individual modality scores (face, image, text, distance)")
     fused_score: float = Field(..., description="Weighted average of modality scores")
     status: Literal["PENDING", "CONFIRMED_REUNITED", "FALSE_MATCH"] = Field("PENDING", description="Status of the match")
     created_at: datetime = Field(default_factory=datetime.utcnow, description="Timestamp of match creation")

@@ -29,9 +29,9 @@ except ImportError:
 
 # For Text Embeddings (Sentence-Transformers)
 try:
-    # from sentence_transformers import SentenceTransformer # Commented out due to temporary ML library disable
+    from sentence_transformers import SentenceTransformer # Uncommented for multilingual text embeddings
     SBERT_MODEL_NAME = "paraphrase-multilingual-MiniLM-L12-v2"
-    sbert_model = None # Set to None as a placeholder
+    sbert_model = SentenceTransformer(SBERT_MODEL_NAME) # Initialize the model
 except ImportError:
     print("Sentence-Transformers not installed. Text embeddings will be unavailable.")
     sbert_model = None
@@ -95,9 +95,8 @@ def get_text_embedding(text: str, language: str = "en") -> Optional[List[float]]
         return None
     try:
         # Sentence-transformers are already multilingual with this model
-        # embeddings = sbert_model.encode(text) # SBERT is commented out
-        # return embeddings.tolist() # SBERT is commented out
-        return [0.0] * 384 # Placeholder for SBERT embedding
+        embeddings = sbert_model.encode(text) # SBERT is uncommented
+        return embeddings.tolist() # SBERT is uncommented
     except Exception as e:
         print(f"Error processing text for SBERT embedding: {e}")
         return None

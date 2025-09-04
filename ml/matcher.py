@@ -2,11 +2,13 @@
 
 import faiss
 import numpy as np
+import math # Import math for geographical calculations
 from typing import List, Dict, Optional
 import os
 from sklearn.metrics.pairwise import cosine_similarity
 import uuid
 from datetime import datetime
+from bson import ObjectId # Import ObjectId for MongoDB
 
 from models.schemas import ReportSchema, MatchSchema, ItemSchema
 from core.database import get_database # Added MongoDB database import
@@ -25,6 +27,28 @@ faiss_indexes: Dict[str, any] = {}
 # Thresholds (will be tuned later as per the plan)
 PERSON_MATCH_THRESHOLD = 0.70 # Example threshold for persons
 ITEM_MATCH_THRESHOLD = 0.60 # Example threshold for items
+
+# Constants for Haversine formula
+R_EARTH_KM = 6371.0 # Radius of Earth in kilometers
+
+def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """
+    Calculate the distance between two points on Earth using the Haversine formula.
+    Returns distance in kilometers.
+    """
+    lat1_rad = math.radians(lat1)
+    lon1_rad = math.radians(lon1)
+    lat2_rad = math.radians(lat2)
+    lon2_rad = math.radians(lon2)
+
+    dlon = lon2_rad - lon1_rad
+    dlat = lat2_rad - lat1_rad
+
+    a = math.sin(dlat / 2)**2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+    distance = R_EARTH_KM * c
+    return distance
 
 def initialize_faiss_index(dimension: int, index_type: str = "Flat") -> faiss.Index:
     """
@@ -115,6 +139,10 @@ async def run_matching_job(report_id: str, report_data: dict, database): # Chang
     description_text = report_data["description_text"]
     photo_urls = report_data["photo_urls"] # These are now base64 strings passed from main.py
     
+    # Extract location for the new report
+    new_report_latitude = report_data["location"]["latitude"]
+    new_report_longitude = report_data["location"]["longitude"]
+
     # --- 1. Extract Embeddings ---
     face_embeddings = []
     image_embedding = None
@@ -174,9 +202,9 @@ async def run_matching_job(report_id: str, report_data: dict, database): # Chang
                     continue
                 
                 # Check if the other_report_id is of the opposite type
-                # Fetch other report details from Supabase
-                other_report_response = database.reports.find_one({"id": other_report_id})
-                if other_report_response and other_report_response["type"] != report_type:
+                # Fetch other report details from MongoDB
+                other_report_doc = await database["reports"].find_one({"_id": ObjectId(other_report_id)}) # Use ObjectId
+                if other_report_doc and other_report_doc["type"] != report_type:
                     current_face_score = scores[i]
                     if other_report_id not in candidate_matches:
                         candidate_matches[other_report_id] = {"face_score": current_face_score}
@@ -191,8 +219,8 @@ async def run_matching_job(report_id: str, report_data: dict, database): # Chang
             if other_report_id == report_id:
                 continue
 
-            other_report_response = database.reports.find_one({"id": other_report_id})
-            if other_report_response and other_report_response["type"] != report_type:
+            other_report_doc = await database["reports"].find_one({"_id": ObjectId(other_report_id)}) # Use ObjectId
+            if other_report_doc and other_report_doc["type"] != report_type:
                 current_img_score = scores[i]
                 if other_report_id not in candidate_matches:
                     candidate_matches[other_report_id] = {"image_score": current_img_score}
@@ -207,8 +235,8 @@ async def run_matching_job(report_id: str, report_data: dict, database): # Chang
             if other_report_id == report_id:
                 continue
 
-            other_report_response = database.reports.find_one({"id": other_report_id})
-            if other_report_response and other_report_response["type"] != report_type:
+            other_report_doc = await database["reports"].find_one({"_id": ObjectId(other_report_id)}) # Use ObjectId
+            if other_report_doc and other_report_doc["type"] != report_type:
                 current_text_score = scores[i]
                 if other_report_id not in candidate_matches:
                     candidate_matches[other_report_id] = {"text_score": current_text_score}
@@ -216,14 +244,53 @@ async def run_matching_job(report_id: str, report_data: dict, database): # Chang
                     candidate_matches[other_report_id]["text_score"] = max(
                         candidate_matches[other_report_id].get("text_score", 0.0), current_text_score
                     )
-
+    
     # --- 3. Calculate Fused Scores and Persist ---
     for other_report_id, scores_dict in candidate_matches.items():
         face_score = scores_dict.get("face_score", 0.0)
         image_score = scores_dict.get("image_score", 0.0)
         text_score = scores_dict.get("text_score", 0.0)
 
-        fused_score = calculate_fused_score(face_score, image_score, text_score)
+        # Fetch location data for the other report
+        other_report_doc = await database["reports"].find_one({"_id": ObjectId(other_report_id)})
+        
+        distance_score = 0.0
+        if other_report_doc and "location" in other_report_doc and \
+           "latitude" in other_report_doc["location"] and "longitude" in other_report_doc["location"]:
+            
+            other_report_latitude = other_report_doc["location"]["latitude"]
+            other_report_longitude = other_report_doc["location"]["longitude"]
+
+            distance_km = haversine_distance(
+                new_report_latitude, new_report_longitude,
+                other_report_latitude, other_report_longitude
+            )
+            print(f"Distance between reports {report_id} and {other_report_id}: {distance_km:.2f} km")
+
+            # Simple distance scoring: closer is better.
+            # Example: 1.0 for 0km, 0.0 for 10km, linearly interpolating.
+            # You can make this more sophisticated (e.g., inverse square, exponential decay).
+            MAX_DISTANCE_FOR_SCORE = 5.0 # km - reports further than this get 0 distance score
+            if distance_km < MAX_DISTANCE_FOR_SCORE:
+                distance_score = 1.0 - (distance_km / MAX_DISTANCE_FOR_SCORE)
+            else:
+                distance_score = 0.0
+            
+            print(f"Distance score: {distance_score:.2f}")
+
+        # Integrate distance score into fused score
+        # Adjust weights as needed. Total weights should sum to 1.0 if using as a direct component.
+        # For simplicity, we'll give it a small weight initially.
+        FUSED_WEIGHTS = {"face": 0.5, "image": 0.3, "text": 0.1, "distance": 0.1} # New weights
+        
+        fused_score = (
+            face_score * FUSED_WEIGHTS["face"] +
+            image_score * FUSED_WEIGHTS["image"] +
+            text_score * FUSED_WEIGHTS["text"] +
+            distance_score * FUSED_WEIGHTS["distance"]
+        )
+        # Ensure fused_score is capped at 1.0 if individual scores can exceed 1.0 or weights are high
+        fused_score = min(1.0, fused_score)
 
         threshold = PERSON_MATCH_THRESHOLD if subject_type == "PERSON" else ITEM_MATCH_THRESHOLD
 
@@ -234,22 +301,22 @@ async def run_matching_job(report_id: str, report_data: dict, database): # Chang
             current_report_is_lost = (report_type == "LOST")
             
             new_match_entry = {
-                "id": match_id, # Added the ID field here
+                "_id": ObjectId(), # Use ObjectId for MongoDB primary key
                 "lost_report_id": report_id if current_report_is_lost else other_report_id,
                 "found_report_id": other_report_id if current_report_is_lost else report_id,
-                "scores": {"face": face_score, "image": image_score, "text": text_score},
+                "scores": {"face": face_score, "image": image_score, "text": text_score, "distance": distance_score}, # Include distance score
                 "fused_score": fused_score,
                 "status": "PENDING",
-                "created_at": datetime.utcnow().isoformat()
+                "created_at": datetime.utcnow()
             }
-            # Insert into Supabase
-            insert_response = database.matches.insert_one(new_match_entry)
+            # Insert into MongoDB
+            insert_response = await database["matches"].insert_one(new_match_entry)
             if insert_response.inserted_id:
-                print(f"Persisted match {match_id}: {new_match_entry}")
+                print(f"Persisted match {insert_response.inserted_id}: {new_match_entry}")
                 # Send real-time notification about the new match
-                await manager.broadcast(f"New match found for report {report_id}: {match_id}")
+                await manager.broadcast(f"New match found for report {report_id}: {insert_response.inserted_id}")
             else:
-                print(f"Failed to persist match {match_id}: {insert_response.last_error}")
+                print(f"Failed to persist match: {insert_response.acknowledged}") # Use acknowledged for insert_one
     
     # Return a message indicating the job is done, or a list of new match IDs
     return {"message": f"Matching job completed for report {report_id}"}

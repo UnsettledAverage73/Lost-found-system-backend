@@ -6,9 +6,9 @@ Pillow # For image processing
 numpy # For numerical operations, especially with embeddings
 scikit-learn # For cosine similarity or other utilities
 faiss-cpu # Or faiss-gpu if a GPU is available, for efficient similarity search
-# sentence-transformers # For text embeddings
-# torch # For CLIP and sentence-transformers
-# transformers # For CLIP and sentence-transformers
+sentence-transformers # For text embeddings
+torch # For CLIP and sentence-transformers
+transformers # For CLIP and sentence-transformers
 # opencv-python # Potentially usfed by deepface/face_recognition
 python-multipart # If handling file uploads in FastAPI
 pymongo # For interacting with MongoDB directly from ML scripts if needed, though FastAPI will be the primary interface
