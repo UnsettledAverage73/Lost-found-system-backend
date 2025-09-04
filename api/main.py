@@ -41,6 +41,8 @@ app = FastAPI(
 origins = [
     "http://localhost:3000",  # Your frontend's origin
     "http://localhost",
+    "https://loft-backend.onrender.com", # Add backend's own URL for potential internal calls or testing
+    "https://loft-rnk7.onrender.com" # Frontend's deployed URL
 ]
 
 app.add_middleware(
