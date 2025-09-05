@@ -33,6 +33,11 @@ class PersonSchema(BaseModel):
     photo_ids: List[str] = Field([], description="GridFS IDs of stored photos of the person") # Changed description
     qr_id: Optional[str] = Field(None, description="QR code ID if registered")
     guardian_contact: Optional[str] = Field(None, description="Contact information for guardian")
+    is_child: Optional[bool] = Field(None, description="Indicates if the person is a child (under 18)")
+    height_cm: Optional[float] = Field(None, description="Height of the person in centimeters")
+    weight_kg: Optional[float] = Field(None, description="Weight of the person in kilograms")
+    identifying_features: Optional[str] = Field(None, description="Distinctive features (e.g., birthmarks, scars)")
+    clothing_description: Optional[str] = Field(None, description="Description of clothing worn by the person")
 
     # Reverted to Pydantic V1 Config for ObjectId serialization
     class Config:
@@ -71,6 +76,8 @@ class ReportSchema(BaseModel):
     status: Literal["OPEN", "MATCHED", "REUNITED", "CLOSED"] = Field("OPEN", description="Status of the report")
     created_at: datetime = Field(default_factory=datetime.utcnow, description="Timestamp of report creation")
     photo_urls: List[str] = Field([], description="List of URLs for report photos")
+    posted_by_contact: Optional[str] = Field(None, description="Contact of the user who posted the report")
+    person_details: Optional[PersonSchema] = Field(None, description="Detailed information for a lost/found person")
 
     # Reverted to Pydantic V1 Config for ObjectId serialization
     class Config:
@@ -112,6 +119,7 @@ class UserSchema(BaseModel):
     role: Literal["VOLUNTEER", "ADMIN"] = Field(..., description="Role of the user")
     contact: str = Field(..., description="Phone number or email for mock alerts")
     consent_face_qr: bool = Field(False, description="User consent for facial recognition and QR tagging")
+    hashed_refresh_token: Optional[str] = Field(None, description="Hashed refresh token for persistent sessions")
 
     # Reverted to Pydantic V1 Config for ObjectId serialization
     class Config:

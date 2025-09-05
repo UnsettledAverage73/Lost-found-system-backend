@@ -13,6 +13,8 @@ from ml.matcher import run_matching_job
 from pymongo import MongoClient # Re-added MongoDB client import
 from bson import ObjectId # Re-added MongoDB ObjectId import
 from gridfs import GridFSBucket # Added GridFSBucket import
+from core.security import get_current_user # Import to get current user
+from models.schemas import UserSchema # Import UserSchema for type hinting
 
 # from backend.core.supabase import get_supabase_client, upload_file_to_supabase_storage, get_file_from_supabase_storage # Removed Supabase imports
 # from supabase import Client # Removed Client for type hinting
@@ -35,7 +37,14 @@ async def create_lost_report(
     longitude: float = Form(..., description="Longitude of the location"),
     location_description: Optional[str] = Form(None, alias="location_desc", description="Human-readable description of the location"),
     photos: Optional[List[UploadFile]] = File(None), # Made photos optional
-    database: MongoClient = Depends(get_database) # Reverted to MongoDB client dependency
+    database: MongoClient = Depends(get_database), # Reverted to MongoDB client dependency
+    current_user: UserSchema = Depends(get_current_user), # Inject current user
+    # Person-specific details
+    is_child: Optional[bool] = Form(None, description="Indicates if the person is a child"),
+    height_cm: Optional[float] = Form(None, description="Height in centimeters"),
+    weight_kg: Optional[float] = Form(None, description="Weight in kilograms"),
+    identifying_features: Optional[str] = Form(None, description="Distinctive features"),
+    clothing_description: Optional[str] = Form(None, description="Description of clothing"),
 ):
     ref_ids = [rid.strip() for rid in ref_ids_str.split(',')]
     
@@ -64,8 +73,23 @@ async def create_lost_report(
             "description": location_description,
         },
         "status": "OPEN",
-        "created_at": datetime.utcnow()
+        "created_at": datetime.utcnow(),
+        "posted_by_contact": current_user.contact # Add posted_by_contact
     }
+    
+    if subject_type == "PERSON":
+        report_data["person_details"] = PersonSchema(
+            name=None, # Name can be derived from ref_ids or handled separately if needed
+            age=None,  # Age can be derived or handled separately if needed
+            language=language, # Use report's language
+            photo_ids=photo_ids, # Use report's photo_ids
+            is_child=is_child,
+            height_cm=height_cm,
+            weight_kg=weight_kg,
+            identifying_features=identifying_features,
+            clothing_description=clothing_description,
+            guardian_contact=None # Can be added if passed directly to person_details
+        ).model_dump(exclude_unset=True) # Use model_dump to exclude unset fields
     
     # Insert into MongoDB
     new_report = await database["reports"].insert_one(report_data)
@@ -90,7 +114,14 @@ async def create_found_report(
     longitude: float = Form(..., description="Longitude of the location"),
     location_description: Optional[str] = Form(None, alias="location_desc", description="Human-readable description of the location"),
     photos: Optional[List[UploadFile]] = File(None), # Made photos optional
-    database: MongoClient = Depends(get_database) # Reverted to MongoDB client dependency
+    database: MongoClient = Depends(get_database), # Reverted to MongoDB client dependency
+    current_user: UserSchema = Depends(get_current_user), # Inject current user
+    # Person-specific details
+    is_child: Optional[bool] = Form(None, description="Indicates if the person is a child"),
+    height_cm: Optional[float] = Form(None, description="Height in centimeters"),
+    weight_kg: Optional[float] = Form(None, description="Weight in kilograms"),
+    identifying_features: Optional[str] = Form(None, description="Distinctive features"),
+    clothing_description: Optional[str] = Form(None, description="Description of clothing"),
 ):
     ref_ids = [rid.strip() for rid in ref_ids_str.split(',')]
 
@@ -118,8 +149,23 @@ async def create_found_report(
             "description": location_description,
         },
         "status": "OPEN",
-        "created_at": datetime.utcnow()
+        "created_at": datetime.utcnow(),
+        "posted_by_contact": current_user.contact # Add posted_by_contact
     }
+    
+    if subject_type == "PERSON":
+        report_data["person_details"] = PersonSchema(
+            name=None, # Name can be derived from ref_ids or handled separately if needed
+            age=None,  # Age can be derived or handled separately if needed
+            language=language, # Use report's language
+            photo_ids=photo_ids, # Use report's photo_ids
+            is_child=is_child,
+            height_cm=height_cm,
+            weight_kg=weight_kg,
+            identifying_features=identifying_features,
+            clothing_description=clothing_description,
+            guardian_contact=None # Can be added if passed directly to person_details
+        ).model_dump(exclude_unset=True) # Use model_dump to exclude unset fields
     
     # Insert into MongoDB
     new_report = await database["reports"].insert_one(report_data)
@@ -138,7 +184,10 @@ async def create_found_report(
 async def list_reports(
     type: Optional[str] = Query(None, description="Filter by report type (LOST or FOUND)"), # Changed Literal to str
     status: Optional[Literal["OPEN", "MATCHED", "REUNITED", "CLOSED"]] = Query(None, description="Filter by report status"),
-    database: MongoClient = Depends(get_database) # Reverted to MongoDB client dependency
+    skip: int = Query(0, description="Number of items to skip"),
+    limit: int = Query(10, description="Maximum number of items to return"),
+    database: MongoClient = Depends(get_database), # Reverted to MongoDB client dependency
+    current_user: UserSchema = Depends(get_current_user) # Ensure user is authenticated
 ):
     query = {}
     if type:
@@ -146,7 +195,8 @@ async def list_reports(
     if status:
         query["status"] = status.upper() # Ensure case-insensitive matching
 
-    reports = await database["reports"].find(query).to_list(1000) # Limit to 1000 reports
+    reports_cursor = database["reports"].find(query).sort("created_at", -1).skip(skip).limit(limit)
+    reports = await reports_cursor.to_list(length=limit)
     
     # For each report, convert photo_ids to base64 images for the client
     # This is a placeholder for now, actual image serving would be a separate endpoint
