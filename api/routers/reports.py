@@ -3,6 +3,7 @@ from typing import List, Optional, Literal
 import base64
 import uuid # Import uuid for generating unique file names
 from datetime import datetime # Added datetime import
+import asyncio # Added asyncio import
 
 from models.schemas import ReportSchema, PersonSchema, ItemSchema, PyObjectId # Re-added PyObjectId
 from core.database import get_database, store_image_in_gridfs, get_image_from_gridfs # Re-added MongoDB database and GridFS imports
@@ -47,6 +48,12 @@ async def create_lost_report(
             file_id = await store_image_in_gridfs(image_data, filename, photo.content_type)
             photo_ids.append(file_id)
 
+    # Handle location field: convert dictionary to string if necessary
+    if isinstance(location, dict):
+        location_str = location.get("description", str(location))
+    else:
+        location_str = location
+
     report_data = {
         "type": "LOST",
         "subject": subject_type,
@@ -54,7 +61,7 @@ async def create_lost_report(
         "description_text": description_text,
         "language": language,
         "photo_ids": photo_ids, # Use GridFS IDs
-        "location": location,
+        "location": location_str,
         "status": "OPEN",
         "created_at": datetime.utcnow()
     }
@@ -92,6 +99,12 @@ async def create_found_report(
             file_id = await store_image_in_gridfs(image_data, filename, photo.content_type)
             photo_ids.append(file_id)
 
+    # Handle location field: convert dictionary to string if necessary
+    if isinstance(location, dict):
+        location_str = location.get("description", str(location))
+    else:
+        location_str = location
+
     report_data = {
         "type": "FOUND",
         "subject": subject_type,
@@ -99,7 +112,7 @@ async def create_found_report(
         "description_text": description_text,
         "language": language,
         "photo_ids": photo_ids, # Use GridFS IDs
-        "location": location,
+        "location": location_str,
         "status": "OPEN",
         "created_at": datetime.utcnow()
     }
@@ -114,7 +127,7 @@ async def create_found_report(
     return ReportSchema.model_validate(created_report)
 
 
-@router.get("/reports/", response_model=List[ReportSchema])
+@router.get("/reports/", response_model=List[ReportSchema]) # Re-added response_model
 async def list_reports(
     type: Optional[str] = Query(None, description="Filter by report type (LOST or FOUND)"), # Changed Literal to str
     status: Optional[Literal["OPEN", "MATCHED", "REUNITED", "CLOSED"]] = Query(None, description="Filter by report status"),
@@ -135,7 +148,20 @@ async def list_reports(
         # In a real app, you'd have an endpoint like /images/{file_id}
         # For now, we'll just not return the actual image data in the list view
 
-    return [ReportSchema.model_validate(report) for report in reports]
+        # Ensure location is a string for existing reports
+        if isinstance(report.get("location"), dict):
+            report["location"] = report["location"].get("description", str(report["location"]))
+
+    validated_reports = []
+    for report in reports:
+        try:
+            validated_reports.append(ReportSchema.model_validate(report))
+        except Exception as e:
+            print(f"Validation error for report {report.get('_id')}: {e}") # Log the error
+            # Optionally, you could log the entire report or specific fields for more debugging
+            # print(f"Problematic report data: {report}")
+
+    return validated_reports # Return only successfully validated reports
 
 @router.get("/reports/{report_id}", response_model=ReportSchema)
 async def get_report(report_id: str, database: MongoClient = Depends(get_database)):
